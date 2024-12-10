@@ -9,7 +9,7 @@ config = dotenv_values()
 
 class DataBaseEnviornment(Enum):
     RDB_LIB: str = config['RDB_LIB']
-    RDB_HOST: str = config["RDB_HOST_PRODUCT"] if config["PROJECT_STATE"] == "PRODUCT" else config["RDB_HOST_DEV"]
+    RDB_HOST: str = config["RDB_HOST"] if config["PROJECT_STATE"] == "PRODUCT" else config["RDB_HOST_DEV"]
     RDB_PORT: int = config['RDB_PORT']
     RDB_USER: str = config['RDB_USER']
     RDB_PASS: str = config['RDB_PASS']
