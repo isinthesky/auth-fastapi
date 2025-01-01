@@ -2,12 +2,12 @@ import jwt
 import requests
 from fastapi import APIRouter, HTTPException, status, Request, Depends
 from fastapi.responses import RedirectResponse
-from src.settings.environment import GoogleEnvironment
 from datetime import datetime, timezone, timedelta
 from src.app.api.v1.dependencies.user import get_user_service
 from src.app.api.v1.schemas.response import create_response, create_error_response
 from src.app.api.v1.schemas.common import Response
 from src.app.core.services.user_service import UserService
+from src.settings.environment import GoogleEnvironment,SecretKeyEnvironment
 from urllib.parse import urlencode
 from icecream import ic
 
@@ -17,10 +17,6 @@ GOOGLE_CLIENT_ID = GoogleEnvironment.GOOGLE_CLIENT_ID.value
 GOOGLE_CLIENT_SECRET = GoogleEnvironment.GOOGLE_CLIENT_SECRET.value
 GOOGLE_REDIRECT_URI = GoogleEnvironment.GOOGLE_REDIRECT_URI.value
 FRONTEND_REDIRECT_URL = GoogleEnvironment.FRONTEND_REDIRECT_URL.value
-
-# JWT 설정 (실무에서는 환경변수 또는 비밀관리 서비스에 보관 권장)
-SECRET_KEY = "REPLACE_THIS_WITH_YOUR_SECURE_SECRET_KEY"
-ALGORITHM = "HS256"
 
 @auth_google_router.get("/login")
 def google_login():
@@ -120,7 +116,7 @@ async def google_callback(code: str, state: str, user_service: UserService = Dep
         "name": name,
         "exp": expire,
     }
-    jwt_access_token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    jwt_access_token = jwt.encode(payload, SecretKeyEnvironment.get_secret_key(), algorithm=SecretKeyEnvironment.get_algorithm())
 
     # -- (5) JWT를 Cookie에 셋팅 후, 프론트엔드로 리다이렉트 --
     redirect_resp = RedirectResponse(url=FRONTEND_REDIRECT_URL, status_code=302)
