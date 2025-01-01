@@ -31,23 +31,21 @@ class UserEntity:
     def update_last_login(self) -> None:
         """마지막 로그인 시간을 갱신합니다."""
         self.last_login = datetime.now(timezone.utc)
-        self.updated_at = datetime.now(timezone.utc)
 
     def add_social_account(self, provider: str, provider_id: str) -> None:
         """소셜 계정 정보를 추가합니다."""
         self.social_accounts[provider] = provider_id
         self.updated_at = datetime.now(timezone.utc)
+        self.last_login = datetime.now(timezone.utc)
 
     def remove_social_account(self, provider: str) -> None:
         """소셜 계정 정보를 제거합니다."""
         if provider in self.social_accounts:
             del self.social_accounts[provider]
-            self.updated_at = datetime.now(timezone.utc)
 
     def change_state(self, new_state: UserState) -> None:
         """사용자 상태를 변경합니다."""
         self.state = new_state.value
-        self.updated_at = datetime.now(timezone.utc)
 
     def has_social_account(self, provider: str) -> bool:
         """특정 제공자의 소셜 계정이 있는지 확인합니다."""

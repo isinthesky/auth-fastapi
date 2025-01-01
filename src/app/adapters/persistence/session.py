@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import AsyncGenerator
 from contextlib import asynccontextmanager
 from functools import wraps
@@ -73,7 +73,7 @@ class AsyncRelationDataBaseTemplate:
         try:
             async with cls.get_session() as session:
                 await session.execute(text("SELECT 1"))
-                UVICORN_LOGGER.info(f"[{datetime.now()}] : DATABASE CONNECT SUCCESS")
+                UVICORN_LOGGER.info(f"[{datetime.now(timezone.utc)}] : DATABASE CONNECT SUCCESS")
         except Exception as e:
             UVICORN_LOGGER.error(f"Database connection failed: {str(e)}")
             raise DatabaseConnectionError("Failed to connect to database")

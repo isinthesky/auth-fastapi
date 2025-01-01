@@ -8,6 +8,7 @@ from src.common.exception import (
 )
 from src.app.core.domain.entities.token import TokenEntity
 from src.app.core.ports.token_port import TokenRepositoryPort
+from icecream import ic
 
 class TokenService:
     def __init__(
@@ -38,6 +39,8 @@ class TokenService:
     async def refresh_access_token(self, refresh_token: str) -> TokenEntity:
         """리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급합니다."""
         stored_token = await self.token_repository.get_by_refresh_token(refresh_token)
+
+        ic(stored_token)
         
         if not stored_token:
             raise InvalidTokenException()

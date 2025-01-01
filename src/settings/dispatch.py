@@ -2,8 +2,11 @@ from abc import ABCMeta
 
 from fastapi import FastAPI
 
-from src.app.api.v1.endpoints.auth import (
+from src.app.api.v1.endpoints.users import (
     user_router
+)
+from src.app.api.v1.endpoints.auth_google import (
+    auth_google_router
 )
 
 
@@ -18,11 +21,13 @@ class AbstractDispatcher(metaclass=ABCMeta):
 
 class RouterDispatcher(AbstractDispatcher):
     _ALLOWED_ROUTERS = [
-        user_router
+        user_router,
+        auth_google_router
     ]
 
     def execute(self):
         [self.app.include_router(routers) for routers in self._ALLOWED_ROUTERS]
+
 
 
 class OrmDispatcher(AbstractDispatcher):
@@ -30,40 +35,20 @@ class OrmDispatcher(AbstractDispatcher):
         Application과 System의 Seperation of Concern을  위해 Classic Mapping 사용
     """
     def execute(self):
-        from sqlalchemy.orm import registry
+        pass
 
-        from src.app.core.domain.entities.user import UserEntity
-        from src.app.core.domain.entities.token import TokenEntity
-        from src.settings.orm import User, TokenModel
-        from sqlalchemy.orm import relationship
+    
+
+class ExceptionDispatcher(AbstractDispatcher):
+    def execute(self):
+        from src.common.exception_handler import exception_handler
+        from src.common.exception import BaseException
         
-        # Entity 와 DataBase Table Mapping
-        mapper_register = registry()
-
-        # User Resource Mapper
-        mapper_register.map_imperatively(
-            UserEntity,
-            User.__table__,
-            properties={
-                'tasks': relationship("TaskEntity", back_populates="user")
-            }
-        )
-
-        # Token Resource Mapper
-        mapper_register.map_imperatively(
-            TokenEntity,
-            TokenModel.__table__,
-            properties={
-                'user': relationship("UserEntity", back_populates="tokens")
-            }
-        )
-
-        return mapper_register
-
+        self.app.add_exception_handler(BaseException, exception_handler)
 
 
 class DispatcherLoader:
-    _DISPATCHERS = [RouterDispatcher, OrmDispatcher]
+    _DISPATCHERS = [RouterDispatcher,OrmDispatcher, ExceptionDispatcher]
 
     @classmethod
     def execute(cls, app: FastAPI):

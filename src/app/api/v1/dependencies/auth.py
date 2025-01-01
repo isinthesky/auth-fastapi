@@ -1,7 +1,8 @@
 from fastapi import Depends
-from src.app.adapters.persistence.repositories.user_repository import UserRepository
+
 from src.app.adapters.persistence.session import get_session
 from src.app.core.services.auth_service import AuthService
+from src.app.adapters.persistence.repositories.user_repository import UserRepository
 
 async def get_user_repository(
     session = Depends(get_session)

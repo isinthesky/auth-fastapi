@@ -9,7 +9,7 @@ from .dispatch import DispatcherLoader
 from src.app.adapters.persistence.session import AsyncRelationDataBaseTemplate
 from src.common.logger import UVICORN_LOGGER
 from src.common.exception import DatabaseConnectionError
-# from .redis import UserRedisTemplate
+from src.app.adapters.persistence.base import Base
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -19,6 +19,14 @@ async def lifespan(app: FastAPI):
     except DatabaseConnectionError as e:
         UVICORN_LOGGER.error(f"Startup failed: {e}")
         raise e
+
+    # 데이터베이스 엔진 가져오기
+    engine = database.get_engine()
+
+    # 비동기적으로 테이블 생성
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables created successfully.")
 
     DispatcherLoader.execute(app)
 

@@ -3,21 +3,27 @@ from kombu.utils.url import safequote
 
 from dotenv import dotenv_values
 from sqlalchemy.engine import URL
+from icecream import ic
 
 config = dotenv_values()
 
 
 class DataBaseEnviornment(Enum):
-    RDB_LIB: str = config['RDB_LIB']
-    RDB_HOST: str = config["RDB_HOST"] if config["PROJECT_STATE"] == "PRODUCT" else config["RDB_HOST_DEV"]
-    RDB_PORT: int = config['RDB_PORT']
-    RDB_USER: str = config['RDB_USER']
-    RDB_PASS: str = config['RDB_PASS']
-    RDB_DB: str = config['RDB_DB']
-    RDB_DRIVER: str = config['RDB_DRIVER']
+    RDB_LIB: str = config.get('RDB_LIB', 'postgresql+asyncpg')
+    RDB_HOST: str = config.get('RDB_HOST', 'postgres:5432')
+    RDB_PORT: int = config.get('RDB_PORT', 5432)
+    RDB_USER: str = config.get('RDB_USER', 'postgres')
+    RDB_PASS: str = config.get('RDB_PASS', 'postgres')
+    RDB_DB: str = config.get('RDB_DB', 'auth-db')
+    RDB_DRIVER: str = config.get('RDB_DRIVER', 'postgresql+asyncpg')
 
     @classmethod
     def get_url_connection(cls):
+        ic(cls.RDB_LIB.value)
+        ic(cls.RDB_HOST.value)
+        ic(cls.RDB_LIB)
+        ic(cls.RDB_HOST)
+
         return URL.create(
             drivername=cls.RDB_LIB.value,
             host=cls.RDB_HOST.value,
@@ -32,7 +38,7 @@ class DataBaseEnviornment(Enum):
     
     @classmethod
     def get_async_url_connection(cls):
-        return f"postgresql+asyncpg://{cls.RDB_USER.value}:{cls.RDB_PASS.value}@{cls.RDB_HOST.value}:{cls.RDB_PORT.value}/{cls.RDB_DB.value}"
+        return f"{cls.RDB_LIB.value}://{cls.RDB_USER.value}:{cls.RDB_PASS.value}@{cls.RDB_HOST.value}:{cls.RDB_PORT.value}/{cls.RDB_DB.value}"
 
 class RedisEnvironment(Enum):
     REDIS_HOST: str = config.get('REDIS_HOST', '192.168.0.23')
@@ -48,10 +54,10 @@ class RedisEnvironment(Enum):
     def get_url_connection(cls):
         return URL.create(
             drivername="redis",
-            host=cls.USER_REDIS_HOST.value,
-            port=int(cls.USER_REDIS_PORT.value),
-            password=cls.USER_REDIS_PASSWORD.value,
-            database=cls.USER_REDIS_DB.value,
+            host=cls.REDIS_HOST.value,
+            port=int(cls.REDIS_PORT.value),
+            password=cls.REDIS_PASSWORD.value,
+            database=cls.REDIS_DB.value,
         )
 
 
@@ -68,10 +74,33 @@ class LoggingEnvironment(Enum):
     LOG_DIR: str = config.get('LOG_DIR', 'logs')
     LOG_FILE_MAX_BYTES: int = int(config.get('LOG_FILE_MAX_BYTES', 10485760))  # 10MB
     LOG_FILE_BACKUP_COUNT: int = int(config.get('LOG_FILE_BACKUP_COUNT', 5))
+    
+
+class GoogleEnvironment(Enum):
+    GOOGLE_CLIENT_ID: str = config.get('GOOGLE_CLIENT_ID', '1234567890')
+    GOOGLE_CLIENT_SECRET: str = config.get('GOOGLE_CLIENT_SECRET', '1234567890')
+    GOOGLE_REDIRECT_URI: str = config.get('GOOGLE_REDIRECT_URI', 'http://facreport.iptime.org:8007/api/v1/auth/google/callback')
+    FRONTEND_REDIRECT_URL: str = config.get('FRONTEND_REDIRECT_URL', 'http://facreport.iptime.org:8000')
 
 
 class MonitoringEnvironment(Enum):
     # Monitoring
     ENABLE_METRICS: bool = config.get('ENABLE_METRICS', True)
     PROMETHEUS_MULTIPROC_DIR: str = config.get('PROMETHEUS_MULTIPROC_DIR', "/tmp")
+
+    @classmethod
+    def get_prometheus_multiproc_dir(cls) -> str:
+        return cls.PROMETHEUS_MULTIPROC_DIR.value
     
+    
+class SecretKeyEnvironment(Enum):
+    SECRET_KEY: str = config.get('SECRET_KEY', 'REPLACE_THIS_WITH_YOUR_SECURE_SECRET_KEY')
+    ALGORITHM: str = config.get('ALGORITHM', 'HS256')
+
+    @classmethod
+    def get_secret_key(cls) -> str:
+        return cls.SECRET_KEY.value
+    
+    @classmethod
+    def get_algorithm(cls) -> str:
+        return cls.ALGORITHM.value

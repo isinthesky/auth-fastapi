@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Optional
 from enum import Enum
 
@@ -67,7 +67,7 @@ class UserProfileResponse(BaseModel):
 class AuthErrorResponse(BaseModel):
     detail: str
     error_code: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now())
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class TokenErrorDetail(BaseModel):
     code: str
@@ -77,7 +77,7 @@ class TokenErrorDetail(BaseModel):
 
 class TokenErrorResponse(BaseModel):
     detail: TokenErrorDetail
-    timestamp: datetime = Field(default_factory=lambda: datetime.now())
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class CreateUserRequest(BaseModel):
