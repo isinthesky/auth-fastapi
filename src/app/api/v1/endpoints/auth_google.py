@@ -115,6 +115,8 @@ async def google_callback(code: str, state: str, user_service: UserService = Dep
         "email": email,
         "name": name,
         "exp": expire,
+        "user_id": str(user.user_id),
+        "user_type": str(user.user_type)
     }
     jwt_access_token = jwt.encode(payload, SecretKeyEnvironment.get_secret_key(), algorithm=SecretKeyEnvironment.get_algorithm())
 
@@ -143,7 +145,7 @@ def verify_cookie(request: Request):
         raise HTTPException(status_code=401, detail="No access token cookie found")
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SecretKeyEnvironment.get_secret_key(), SecretKeyEnvironment.get_algorithm())
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Access token expired")
     except jwt.InvalidTokenError:
@@ -154,7 +156,8 @@ def verify_cookie(request: Request):
         "sub": payload.get("sub"),
         "email": payload.get("email"),
         "name": payload.get("name"),
-        "exp": payload.get("exp")
+        "exp": payload.get("exp"),
+        "user_id": payload.get("user_id"),
     }
 
 

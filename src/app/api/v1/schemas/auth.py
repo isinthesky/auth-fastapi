@@ -93,8 +93,4 @@ class UserResponse(BaseModel):
     name: str
     email: str
     user_type: str
-    state: int
-    created_at: datetime
-    updated_at: datetime
-    last_login: datetime
     social_accounts: Dict[str, str]

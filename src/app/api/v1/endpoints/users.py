@@ -1,6 +1,7 @@
 import jwt
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.security import APIKeyHeader, APIKeyCookie
 from src.app.api.v1.schemas.auth import (
     CreateUserRequest,
     AddSocialAccountRequest,
@@ -14,7 +15,13 @@ from src.app.core.domain.value_objects import UserState
 from src.app.infrastructure.logging.logger import auth_logger
 from src.settings.environment import SecretKeyEnvironment
 
+from icecream import ic
+
+
 user_router = APIRouter(prefix="/api/v1/users", tags=["users"])
+
+api_key_header = APIKeyHeader(name="HTTP-Authorization", auto_error=False)
+api_key_cookie = APIKeyCookie(name="access_token", auto_error=False)
 
 @user_router.post(
     path="",
@@ -34,10 +41,6 @@ async def create_user(
             name=user.name,
             email=user.email,
             user_type=user.user_type,
-            state=user.state,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
-            last_login=user.last_login,
             social_accounts=user.social_accounts
         ))
     except HTTPException as e:
@@ -48,21 +51,22 @@ async def create_user(
         return create_error_response(str(e), 500)
 
 @user_router.get(
-    path="/me",
+    path="/verify",
     response_model=Response[UserResponse],
     summary="사용자 정보 조회",
     description="사용자 정보를 조회합니다.",
 )
-async def get_me(request: Request):
+async def get_me(request: Request, token:str = Depends(api_key_header)):
     """
     쿠키에 있는 access_token을 꺼내어 JWT decode
     사용자 정보(email, name 등)를 반환
     """
-    token = request.cookies.get("access_token")
-    if not token:
-        raise HTTPException(status_code=401, detail="No access token cookie found")
-
     try:
+        ic(token)
+        if token is None:
+            raise HTTPException(status_code=401, detail="No access token cookie found")
+        # remove 'Bearer ' from the token
+        token = token.replace("Bearer ", "")
         payload = jwt.decode(token, 
                              SecretKeyEnvironment.get_secret_key(), 
                              algorithms=[SecretKeyEnvironment.get_algorithm()])
@@ -72,60 +76,60 @@ async def get_me(request: Request):
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid access token")
 
-    # payload 안에 원하는 정보가 들어있다고 가정 (email, name 등)
-    user_id = payload.get("sub")      # 구글 id
-    email = payload.get("email")
-    name = payload.get("name")
-
-    if not user_id or not email:
-        raise HTTPException(status_code=400, detail="Token payload incomplete")
+    ic(payload)
 
     return create_response(
-        data={
-            "userId": user_id,
-            "email": email,
-            "name": name
-        },
+        data=UserResponse(
+            user_id=str(payload.get("user_id")),
+            email=payload.get("email"),
+            name=payload.get("name"),
+            user_type=str(payload.get("user_type")),
+            social_accounts={"google": payload.get("sub")}
+        ),
+        message="User information retrieved",
+        status_code=200
+    )
+    
+@user_router.get(
+    path="/me",
+    response_model=Response[UserResponse],
+    summary="사용자 정보 조회",
+    description="사용자 정보를 조회합니다.",
+)
+async def get_me(request: Request, token:str = Depends(api_key_cookie)):
+    """
+    쿠키에 있는 access_token을 꺼내어 JWT decode
+    사용자 정보(email, name 등)를 반환
+    """
+    try:
+        ic(token)
+        if token is None:
+            raise HTTPException(status_code=401, detail="No access token cookie found")
+        # remove 'Bearer ' from the token
+        token = token.replace("Bearer ", "")
+        payload = jwt.decode(token, 
+                             SecretKeyEnvironment.get_secret_key(), 
+                             algorithms=[SecretKeyEnvironment.get_algorithm()])
+        
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Access token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid access token")
+
+    ic(payload)
+
+    return create_response(
+        data=UserResponse(
+            user_id=str(payload.get("user_id")),
+            email=payload.get("email"),
+            name=payload.get("name"),
+            user_type=str(payload.get("user_type")),
+            social_accounts={"google": payload.get("sub")}
+        ),
         message="User information retrieved",
         status_code=200
     )
 
-@user_router.get(
-    path="/{user_id}",
-    response_model=Response[UserResponse],
-    summary="사용자 정보 조회",
-    description="사용자 ID로 사용자 정보를 조회합니다.",
-)
-async def get_user(
-    user_id: UUID,
-    user_service: UserService = Depends(get_user_service)
-):
-    auth_logger.info("Fetching user information", user_id=str(user_id))
-    try:
-        user = await user_service.get_user(user_id)
-        auth_logger.info("User information retrieved", user_id=str(user.user_id))
-        return create_response(
-            data=UserResponse(
-                user_id=str(user.user_id),
-                name=user.name,
-                email=user.email,
-                user_type=user.user_type,
-                state=user.state,
-                created_at=user.created_at,
-                updated_at=user.updated_at,
-                last_login=user.last_login,
-                social_accounts=user.social_accounts
-            ),
-            message="User information retrieved",
-            status_code=200
-        )
-    except HTTPException as e:
-        auth_logger.error("Failed to fetch user information", error=str(e))
-        raise e
-    except Exception as e:
-        auth_logger.error("Unexpected error during fetching user information", error=str(e))
-        raise HTTPException(status_code=500, detail=str(e))
-    
 
 @user_router.post(
     path="/{user_id}/social-accounts",
@@ -145,11 +149,7 @@ async def add_social_account(
             user_id=str(user.user_id),
             name=user.name,
             email=user.email,
-            user_type=user.user_type,
-            state=user.state,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
-            last_login=user.last_login,
+            user_type=str(user.user_type),
             social_accounts=user.social_accounts
         ))
     except HTTPException as e:
@@ -179,11 +179,7 @@ async def change_user_state(
                 user_id=str(user.user_id),
                 name=user.name,
                 email=user.email,
-                user_type=user.user_type,
-                state=user.state,
-                created_at=user.created_at,
-                updated_at=user.updated_at,
-                last_login=user.last_login,
+                user_type=str(user.user_type),
                 social_accounts=user.social_accounts
             ),
             message="User state changed",
@@ -210,11 +206,7 @@ async def remove_social_account(
             user_id=str(user.user_id),
             name=user.name,
             email=user.email,
-            user_type=user.user_type,
-            state=user.state,
-            created_at=user.created_at,
-            updated_at=user.updated_at,
-            last_login=user.last_login,
+            user_type=str(user.user_type),
             social_accounts=user.social_accounts
         ))
     except HTTPException as e:
