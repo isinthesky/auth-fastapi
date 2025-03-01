@@ -17,7 +17,7 @@ class AuthApplication:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://facreport.iptime.org:8007", "http://localhost:8007", "http://facreport.iptime.org:8000", "http://localhost:8000"],
+        allow_origins=["http://facreport.iptime.org:8007", "http://localhost:8007", "http://facreport.iptime.org:8000", "http://facreport.iptime.org:8001", "http://facreport.iptime.org:8002", "http://localhost:8001"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -26,6 +26,10 @@ class AuthApplication:
     @app.get("/health")
     async def health_check():
         return {"status": "ok"}
+    
+    @app.get("/api/v1/auth")
+    async def auth_check():
+        return {"message": "Auth API is running"}
 
     def __call__(self, *args, **kwargs):
         logger.info("AuthApplication called")

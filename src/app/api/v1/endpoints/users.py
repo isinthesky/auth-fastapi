@@ -20,7 +20,7 @@ from icecream import ic
 
 user_router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
-api_key_header = APIKeyHeader(name="HTTP-Authorization", auto_error=False)
+api_key_header = APIKeyHeader(name="Authorization", auto_error=False)
 api_key_cookie = APIKeyCookie(name="access_token", auto_error=False)
 
 @user_router.post(
@@ -102,10 +102,9 @@ async def get_me(request: Request, token:str = Depends(api_key_cookie)):
     사용자 정보(email, name 등)를 반환
     """
     try:
-        ic(token)
-        if token is None:
+        if not token:
             raise HTTPException(status_code=401, detail="No access token cookie found")
-        # remove 'Bearer ' from the token
+        
         token = token.replace("Bearer ", "")
         payload = jwt.decode(token, 
                              SecretKeyEnvironment.get_secret_key(), 

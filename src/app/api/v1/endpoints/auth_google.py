@@ -109,12 +109,13 @@ async def google_callback(code: str, state: str, user_service: UserService = Dep
             
     # -- (4) JWT Access Token 발급 --
     #     - 유효기간 30분 예시
-    expire = datetime.now(timezone.utc) + timedelta(minutes=30)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=180)
     payload = {
         "sub": google_id,
         "email": email,
         "name": name,
         "exp": expire,
+        "iss": "auth-service",
         "user_id": str(user.user_id),
         "user_type": str(user.user_type)
     }
@@ -128,7 +129,7 @@ async def google_callback(code: str, state: str, user_service: UserService = Dep
         httponly=True,   # JS에서 접근 불가
         secure=False,    # HTTPS가 아닌 환경 테스트 시 False (실서버에서는 True 권장)
         samesite="lax",
-        max_age=1800,    # 30분(1800초)
+        max_age=10800,    # 3시간(10800초)
     )
 
     return redirect_resp
@@ -157,6 +158,7 @@ def verify_cookie(request: Request):
         "email": payload.get("email"),
         "name": payload.get("name"),
         "exp": payload.get("exp"),
+        "iss": "auth-service",
         "user_id": payload.get("user_id"),
     }
 

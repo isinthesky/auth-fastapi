@@ -1,5 +1,4 @@
 from datetime import datetime, timezone, timedelta
-from typing import Optional
 from uuid import UUID, uuid4
 from src.common.exception import (
     InvalidTokenException,

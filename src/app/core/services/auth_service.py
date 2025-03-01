@@ -2,9 +2,7 @@
 from typing import Optional
 from uuid import UUID
 from datetime import datetime, timezone, timedelta
-
 from fastapi import HTTPException
-
 from app.core.domain.entities.token import TokenEntity
 from app.core.ports.token_port import TokenRepositoryPort
 from app.core.ports.auth_port import AuthServicePort

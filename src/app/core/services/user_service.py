@@ -1,9 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID, uuid4
-
 from fastapi import HTTPException
-
 from src.app.core.domain.entities.user import UserEntity
 from src.app.core.domain.value_objects import UserState, UserType
 from src.app.core.ports.user_port import UserRepositoryPort

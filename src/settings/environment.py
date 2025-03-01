@@ -79,7 +79,7 @@ class LoggingEnvironment(Enum):
 class GoogleEnvironment(Enum):
     GOOGLE_CLIENT_ID: str = config.get('GOOGLE_CLIENT_ID', '1234567890')
     GOOGLE_CLIENT_SECRET: str = config.get('GOOGLE_CLIENT_SECRET', '1234567890')
-    GOOGLE_REDIRECT_URI: str = config.get('GOOGLE_REDIRECT_URI', 'http://facreport.iptime.org:8007/api/v1/auth/google/callback')
+    GOOGLE_REDIRECT_URI: str = config.get('GOOGLE_REDIRECT_URI', 'http://facreport.iptime.org:8000/api/v1/auth/google/callback')
     FRONTEND_REDIRECT_URL: str = config.get('FRONTEND_REDIRECT_URL', 'http://facreport.iptime.org:8000')
 
 
